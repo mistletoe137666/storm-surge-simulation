@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#123640" />
+  <title>风暴潮模拟平台</title>
+  <style>
+    :root {
+      --ink: #16343c;
+      --ink-soft: #46636a;
+      --paper: #f5f1e9;
+      --panel: #fffdf8;
+      --line: #d6d9d1;
+      --sea: #258693;
+      --sea-deep: #125b6b;
+      --sea-pale: #b8dfe0;
+      --coral: #d95f4b;
+      --amber: #d59a3f;
+      --green: #4f806d;
+      --shadow: 0 14px 36px rgba(22, 52, 60, .1);
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; }
+    html { min-width: 320px; background: var(--paper); }
+    body {
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--ink);
+      background: linear-gradient(90deg, rgba(22,52,60,.035) 1px, transparent 1px) 0 0 / 28px 28px, var(--paper);
+      font-family: "Aptos", "Microsoft YaHei", "PingFang SC", sans-serif;
+      font-size: 16px;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, input:focus-visible { outline: 3px solid rgba(217,95,75,.36); outline-offset: 2px; }
+    h1, h2, h3, p { margin: 0; }
+    .shell { max-width: 1500px; margin: 0 auto; padding: 20px; }
+    .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 14px; }
+    .eyebrow, .section-label { color: var(--coral); font-size: 11px; font-weight: 850; letter-spacing: .13em; text-transform: uppercase; }
+    h1 { margin-top: 5px; font-size: clamp(30px, 4.4vw, 55px); line-height: 1.02; letter-spacing: -.035em; }
+    h2 { font-size: 20px; line-height: 1.16; }
+    h3 { font-size: 14px; }
+    .dek { max-width: 740px; margin-top: 10px; color: var(--ink-soft); line-height: 1.55; }
+    .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .context-note { max-width: 360px; color: var(--ink-soft); font-size: 12px; line-height: 1.4; text-align: right; }
+    .chip { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft); background: rgba(255,253,248,.8); font-size: 12px; white-space: nowrap; }
+    .chip strong { color: var(--ink); }
+    .btn { border: 1px solid var(--ink); border-radius: 7px; padding: 10px 13px; color: #fffdf8; background: var(--ink); font-weight: 800; transition: transform 160ms ease, background 160ms ease; }
+    .btn:hover { transform: translateY(-1px); background: #28545e; }
+    .btn.secondary { color: var(--ink); border-color: var(--line); background: transparent; }
+    .btn.secondary:hover { background: #e9ebe3; }
+    .btn.icon { min-width: 42px; padding-inline: 10px; }
+    .warning { margin: 0 0 15px; padding: 10px 13px; border-left: 4px solid var(--amber); color: #664c22; background: #fff5dd; font-size: 13px; line-height: 1.45; }
+    .progress { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 15px; min-width: 0; }
+    .progress-step { min-width: 0; min-height: 50px; padding: 9px 12px; border-top: 3px solid var(--line); background: rgba(255,253,248,.76); color: var(--ink-soft); }
+    .progress-step strong { display: block; color: var(--ink); font-size: 13px; }
+    .progress-step.active { border-color: var(--coral); }
+    .progress-step.done { border-color: var(--green); }
+    .micro { color: var(--ink-soft); font-size: 12px; line-height: 1.45; }
+    .layout { display: grid; grid-template-columns: minmax(235px, .72fr) minmax(520px, 1.65fr); gap: 14px; align-items: start; min-width: 0; }
+    .panel { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,253,248,.93); box-shadow: var(--shadow); }
+    .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 16px 16px 10px; }
+    .panel-body { padding: 0 16px 16px; }
+    .section-label { margin: 17px 0 8px; color: var(--ink-soft); font-size: 10px; }
+    .mission { padding: 12px 13px; border-left: 4px solid var(--coral); background: #fff0e9; line-height: 1.5; }
+    .mission p { margin-top: 5px; color: #694338; font-size: 13px; }
+    .control-group { display: grid; gap: 6px; }
+    .option { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; padding: 9px 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: #fffdf8; text-align: left; }
+    .option:hover { border-color: var(--sea); }
+    .option.active { border-color: var(--sea); background: #e8f5f2; box-shadow: inset 3px 0 0 var(--sea); }
+    .option input { width: 16px; height: 16px; margin: 0; accent-color: var(--sea); }
+    .option strong { display: block; font-size: 13px; }
+    .option small { display: block; margin-top: 2px; color: var(--ink-soft); font-size: 11px; line-height: 1.3; }
+    .role-strip { display: grid; grid-template-columns: 1fr; gap: 6px; }
+    .role { padding: 8px 9px; border: 1px dashed var(--line); border-radius: 7px; background: #faf8f1; }
+    .role strong { display: block; font-size: 11px; }
+    .role span { display: block; margin-top: 2px; color: var(--ink-soft); font-size: 11px; }
+    .scene-panel { overflow: hidden; }
+    .model-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 16px 16px 0; }
+    .scene { position: relative; min-height: 455px; margin: 13px 16px 0; overflow: hidden; border: 1px solid #9fc1c1; border-radius: 10px; background: #dceeed; isolation: isolate; }
+    .scene::before { content: "沿海城市剖面 · 示意关系"; position: absolute; left: 16px; top: 13px; z-index: 8; color: rgba(22,52,60,.68); font-size: 11px; font-weight: 850; letter-spacing: .08em; }
+    .coast-svg { display: block; width: 100%; height: 100%; min-height: 455px; }
+    .coast-svg text { font-family: "Aptos", "Microsoft YaHei", "PingFang SC", sans-serif; }
+    .diagram-label { fill: var(--ink); font-size: 18px; font-weight: 850; }
+    .diagram-small { fill: var(--ink-soft); font-size: 15px; font-weight: 700; }
+    .diagram-muted { fill: rgba(22,52,60,.62); font-size: 14px; font-weight: 750; }
+    .diagram-tag rect { fill: rgba(255,253,248,.88); stroke: rgba(22,52,60,.2); stroke-width: 1.5; }
+    .diagram-tag text { fill: var(--ink); font-size: 14px; font-weight: 850; }
+    .wind-group { opacity: .2; transform: translateX(-10px); transform-box: fill-box; transform-origin: center; transition: opacity 300ms ease, transform 450ms ease; }
+    .scene.wind-on .wind-group { opacity: .9; transform: translateX(12px); }
+    .wind-line { fill: none; stroke: var(--coral); stroke-width: 5; stroke-linecap: round; }
+    .wind-head { fill: var(--coral); }
+    .sea-fill { fill: url(#seaGradient); transition: d 520ms cubic-bezier(.2,.8,.2,1); }
+    .flood-fill { fill: var(--coral); opacity: 0; transition: opacity 420ms ease; }
+    .flood-fill.show { opacity: .26; }
+    .normal-water-line, .total-water-line { fill: none; transition: d 520ms cubic-bezier(.2,.8,.2,1), stroke 250ms ease; }
+    .normal-water-line { stroke: var(--sea-deep); stroke-width: 3; stroke-dasharray: 12 9; opacity: .8; }
+    .total-water-line { stroke: var(--sea-deep); stroke-width: 7; stroke-linecap: round; }
+    .total-water-line.danger { stroke: var(--coral); }
+    .water-label rect { fill: var(--sea-deep); }
+    .water-label.danger rect { fill: var(--coral); }
+    .water-label text { fill: #fff; font-size: 14px; font-weight: 850; }
+    .overtop-ribbon { position: absolute; left: 53%; top: 12%; z-index: 9; padding: 8px 10px; border-radius: 6px; color: #fff; background: var(--coral); font-size: 12px; font-weight: 850; opacity: 0; transform: translateY(-4px); transition: opacity 250ms ease, transform 250ms ease; }
+    .overtop-ribbon.show { opacity: 1; transform: translateY(0); }
+    .scene-foot { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin: 13px 16px 0; }
+    .metric { min-height: 60px; padding: 8px 9px; border-top: 2px solid var(--line); background: #faf8f1; }
+    .metric span { display: block; color: var(--ink-soft); font-size: 10px; }
+    .metric strong { display: block; margin-top: 4px; font-size: 14px; }
+    .metric.danger { border-color: var(--coral); background: #fff0e9; }
+    .scene-caption { padding: 12px 16px 16px; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+    .timeline { margin: 14px 16px 0; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #faf8f1; }
+    .timeline-top { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+    .timeline-title { font-weight: 850; font-size: 13px; }
+    .time-readout { color: var(--coral); font-size: 12px; font-weight: 850; }
+    .timeline input[type=range] { width: 100%; margin: 13px 0 5px; accent-color: var(--coral); }
+    .ticks { display: grid; grid-template-columns: repeat(7, 1fr); color: var(--ink-soft); font-size: 10px; }
+    .ticks span { text-align: center; }
+    .timeline-actions { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 11px; }
+    .timeline-actions .btn { flex: 1 1 80px; padding: 8px 10px; font-size: 12px; }
+    .preset-grid { display: grid; gap: 7px; }
+    .preset { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: #fffdf8; text-align: left; }
+    .preset:hover { border-color: var(--coral); }
+    .preset strong { display: block; font-size: 12px; }
+    .preset small { display: block; margin-top: 2px; color: var(--ink-soft); font-size: 11px; }
+    .prediction { padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: #faf8f1; }
+    .prediction p { color: var(--ink-soft); font-size: 12px; line-height: 1.45; }
+    .predict-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 9px; }
+    .predict-btn { padding: 8px 4px; border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: #fffdf8; font-size: 12px; }
+    .predict-btn.active { border-color: var(--coral); color: #fff; background: var(--coral); }
+    .run-row { display: flex; gap: 7px; margin-top: 9px; }
+    .run-row .btn { flex: 1; padding: 9px 8px; font-size: 12px; }
+    .compare { margin-top: 9px; padding: 10px; border-left: 3px solid var(--sea); color: #2b555c; background: #e9f5f2; font-size: 12px; line-height: 1.5; }
+    .chain { display: grid; gap: 6px; }
+    .chain-item { position: relative; padding: 9px 9px 9px 27px; border-left: 2px solid var(--line); color: var(--ink-soft); font-size: 12px; line-height: 1.4; }
+    .chain-item::before { content: ""; position: absolute; left: -6px; top: 12px; width: 8px; height: 8px; border: 2px solid var(--panel); border-radius: 50%; background: var(--line); }
+    .chain-item.active { border-color: var(--sea); color: var(--ink); }
+    .chain-item.active::before { background: var(--sea); }
+    .chain-item strong { display: block; margin-bottom: 2px; color: var(--ink); }
+    .key-question { margin-top: 12px; padding: 10px 11px; border: 1px solid rgba(217,95,75,.3); border-radius: 7px; color: #774133; background: #fff1e9; font-size: 12px; line-height: 1.5; }
+    .footnote { margin-top: 11px; color: var(--ink-soft); font-size: 11px; line-height: 1.45; }
+    .toast { position: fixed; left: 50%; bottom: 18px; z-index: 30; max-width: min(520px, calc(100vw - 32px)); padding: 11px 14px; border: 1px solid var(--ink); border-radius: 8px; color: #fffdf8; background: var(--ink); box-shadow: var(--shadow); transform: translate(-50%, 170%); transition: transform 220ms ease; font-size: 13px; line-height: 1.4; }
+    .toast.show { transform: translate(-50%, 0); }
+    @media (max-width: 1180px) {
+      .layout { grid-template-columns: minmax(235px, .75fr) minmax(430px, 1.35fr); }
+    }
+    @media (max-width: 780px) {
+      .shell { padding: 13px; }
+      .shell, .topbar, .warning, .layout, .right-column { width: 100%; max-width: 100%; min-width: 0; }
+      .topbar { display: block; }
+      .top-actions { justify-content: flex-start; margin-top: 13px; }
+      .progress { display: flex; width: 100%; min-width: 0; }
+      .progress-step { flex: 1 1 0; width: 0; padding-inline: 8px; overflow-wrap: anywhere; }
+      .progress-step strong { font-size: 11px; }
+      .progress-step .micro { font-size: 10px; }
+      .layout { display: flex; flex-direction: column; }
+      .scene-panel { order: 1; }
+      .control-column { order: 2; }
+      .right-column { order: 3; display: block; }
+      .context-note { max-width: 280px; text-align: left; }
+      .panel { width: 100%; max-width: 100%; margin-bottom: 12px; overflow: hidden; }
+      .warning, .mission p, .dek { overflow-wrap: anywhere; word-break: break-all; }
+      .scene { min-height: 340px; margin-inline: 12px; }
+      .coast-svg { min-height: 340px; }
+      .scene-foot { margin-inline: 12px; grid-template-columns: repeat(2, 1fr); }
+      .timeline { margin-inline: 12px; }
+      .scene-caption { padding-inline: 12px; }
+      .sea-wall { left: 47%; height: 85px; }
+      .wall-label { left: 37%; }
+      .overtop-ribbon { left: 48%; }
+      .houses { right: 5%; transform: scale(.82); transform-origin: right bottom; }
+      .port { left: 55%; }
+      .port-label { left: 55%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">课堂模拟平台 / 风暴潮成因</div>
+        <h1>风暴潮模拟平台</h1>
+        <p class="dek">跟随台风接近的时间线，观察风暴增水怎样与潮位叠加，并判断海水为什么会越过海堤进入低洼城市。</p>
+      </div>
+      <div class="top-actions">
+        <span class="context-note">用于课堂演示风暴潮的形成过程</span>
+        <button class="btn secondary" id="resetBtn" type="button">重置场景</button>
+      </div>
+    </header>
+
+    <div class="warning"><strong>教学示意模型，不用于实际风暴潮预报。</strong> 先观察一个变量的变化，再播放时间轴。</div>
+
+    <section class="layout">
+      <aside class="panel control-column">
+        <div class="panel-head"><div><div class="eyebrow">Simulation settings</div><h2>设置推演条件</h2></div></div>
+        <div class="panel-body">
+          <div class="mission"><strong>观察任务</strong><p>一次只改变一个条件，观察风暴增水如何与潮位叠加，并判断总水位是否越过海堤。</p></div>
+
+          <div class="section-label">台风强度</div>
+          <div class="control-group" data-group="intensity">
+            <label class="option active"><input type="radio" name="intensity" value="weak" /><span><strong>较弱</strong><small>向岸风较小，增水有限</small></span></label>
+            <label class="option"><input type="radio" name="intensity" value="strong" checked /><span><strong>较强</strong><small>持续向岸推水</small></span></label>
+            <label class="option"><input type="radio" name="intensity" value="veryStrong" /><span><strong>很强</strong><small>强风和低气压共同作用</small></span></label>
+          </div>
+
+          <div class="section-label">台风接近时的潮位</div>
+          <div class="control-group" data-group="tide">
+            <label class="option active"><input type="radio" name="tide" value="low" /><span><strong>低潮</strong><small>正常潮位较低</small></span></label>
+            <label class="option"><input type="radio" name="tide" value="flat" checked /><span><strong>平潮</strong><small>正常潮位居中</small></span></label>
+            <label class="option"><input type="radio" name="tide" value="high" /><span><strong>高潮</strong><small>正常潮位较高</small></span></label>
+          </div>
+
+          <div class="section-label">海岸类型</div>
+          <div class="control-group" data-group="coast">
+            <label class="option active"><input type="radio" name="coast" value="open" /><span><strong>开阔海岸</strong><small>海水有较大空间分散</small></span></label>
+            <label class="option"><input type="radio" name="coast" value="bay" /><span><strong>海湾</strong><small>海水更容易汇聚</small></span></label>
+            <label class="option"><input type="radio" name="coast" value="estuary" checked /><span><strong>河口低地</strong><small>低洼且水流汇入城市</small></span></label>
+          </div>
+
+        </div>
+      </aside>
+
+      <section class="panel scene-panel">
+        <div class="model-header"><div><div class="eyebrow">Side profile model</div><h2>风暴潮水位变化</h2></div></div>
+        <div class="scene" id="scene">
+          <svg class="coast-svg" viewBox="0 0 1000 520" role="img" aria-labelledby="coastTitle coastDesc" preserveAspectRatio="none">
+            <title id="coastTitle">海岸城市风暴潮剖面示意图</title>
+            <desc id="coastDesc">左侧是海洋和向岸风，中央是海堤，右侧是高于海面的低洼居民区。水位线会随台风强度、潮位和时间变化。</desc>
+            <defs>
+              <linearGradient id="skyGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9e6e5"/><stop offset=".72" stop-color="#edf4e9"/><stop offset="1" stop-color="#d8e2d2"/></linearGradient>
+              <linearGradient id="seaGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fcbd0"/><stop offset="1" stop-color="#2c8292"/></linearGradient>
+              <linearGradient id="seabedGradient" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d7c28d"/><stop offset="1" stop-color="#b7965f"/></linearGradient>
+              <linearGradient id="landGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e4c98f"/><stop offset="1" stop-color="#c8a76a"/></linearGradient>
+              <clipPath id="lowlandClip"><path d="M 590 310 C 720 290 860 262 1000 245 L 1000 385 L 590 385 Z"/></clipPath>
+              <pattern id="lowlandPattern" width="22" height="22" patternUnits="userSpaceOnUse"><path d="M0 22 L22 0" stroke="#6d806d" stroke-width="1" opacity=".13"/></pattern>
+            </defs>
+
+            <rect width="1000" height="520" fill="url(#skyGradient)"/>
+            <path d="M0 372 C160 351 330 352 505 370 L520 520 H0 Z" fill="url(#seabedGradient)"/>
+            <path d="M500 342 C560 330 600 300 650 275 C750 225 860 215 1000 205 V520 H500 Z" fill="#776b61"/>
+            <path d="M500 342 C560 330 600 300 650 275 C750 225 860 215 1000 205 L1000 246 C860 257 750 272 660 307 C600 331 555 360 500 365 Z" fill="url(#landGradient)"/>
+            <path d="M500 342 C560 330 600 300 650 275 C750 225 860 215 1000 205" fill="none" stroke="#f4dfae" stroke-width="5" opacity=".72"/>
+            <path d="M0 412 C160 380 330 380 505 400" fill="none" stroke="#e7efe9" stroke-width="2" opacity=".44"/>
+            <path d="M0 466 C160 424 320 427 505 449" fill="none" stroke="#1b6977" stroke-width="2" opacity=".32"/>
+
+            <g class="wind-group" id="wind" aria-label="向岸风">
+              <path class="wind-line" d="M120 160 H245"/><path class="wind-head" d="M245 160 l-18 -10 v20 z"/>
+              <path class="wind-line" d="M165 202 H300"/><path class="wind-head" d="M300 202 l-18 -10 v20 z"/>
+              <text x="122" y="138" class="diagram-small">向岸风</text>
+            </g>
+
+            <path id="seaFill" class="sea-fill" d="M0 360 L505 360 L505 520 L0 520 Z"/>
+            <path id="floodFill" class="flood-fill" clip-path="url(#lowlandClip)" d="M505 350 L1000 350 L1000 520 L505 520 Z"/>
+            <path d="M590 310 C720 290 860 262 1000 245 L1000 385 L590 385 Z" fill="url(#lowlandPattern)" opacity=".58"/>
+            <path d="M505 342 L530 334 L562 312" fill="none" stroke="#f7e1ab" stroke-width="8" opacity=".72"/>
+
+            <g class="seawall-group">
+              <path d="M490 349 L511 334 L528 354 L509 368 Z" fill="#16343c"/>
+              <path d="M511 334 L518 338 L535 357 L528 354 Z" fill="#315964"/>
+              <path d="M487 349 L511 334" stroke="#f3eee3" stroke-width="3"/>
+              <text x="448" y="323" class="diagram-label">海堤</text>
+            </g>
+
+            <g class="city-group">
+              <g transform="translate(736 198)"><path d="M0 24 L34 0 L68 24 V77 H0 Z" fill="#fff9ec" stroke="#16343c" stroke-width="3"/><path d="M-5 24 L34 -7 L73 24 L68 30 L34 4 L0 30 Z" fill="#d87359" stroke="#16343c" stroke-width="3"/><path d="M30 77 V49 H40 V77" fill="#d6a06e" stroke="#16343c" stroke-width="2"/></g>
+              <g transform="translate(820 181)"><path d="M0 25 L36 0 L72 25 V94 H0 Z" fill="#fff9ec" stroke="#16343c" stroke-width="3"/><path d="M-5 25 L36 -8 L77 25 L72 31 L36 4 L0 31 Z" fill="#d87359" stroke="#16343c" stroke-width="3"/><path d="M32 94 V62 H42 V94" fill="#d6a06e" stroke="#16343c" stroke-width="2"/></g>
+              <g transform="translate(908 210)"><path d="M0 23 L29 0 L58 23 V65 H0 Z" fill="#fff9ec" stroke="#16343c" stroke-width="3"/><path d="M-5 23 L29 -7 L63 23 L58 29 L29 4 L0 29 Z" fill="#d87359" stroke="#16343c" stroke-width="3"/></g>
+              <text x="744" y="309" class="diagram-label">低洼居民区</text>
+              <text x="744" y="331" class="diagram-muted">海堤背水侧</text>
+            </g>
+
+            <line id="normalLine" class="normal-water-line" x1="0" y1="360" x2="520" y2="360"/>
+            <line id="totalLine" class="total-water-line" x1="0" y1="360" x2="1000" y2="360"/>
+            <g id="normalLabel" class="water-label" transform="translate(35 334)"><rect width="86" height="25" rx="5"/><text x="11" y="17">正常潮位</text></g>
+            <g id="totalLabel" class="water-label" transform="translate(790 334)"><rect width="78" height="25" rx="5"/><text x="12" y="17">总水位</text></g>
+            <g class="diagram-tag" transform="translate(24 454)"><rect width="102" height="28" rx="6"/><text x="12" y="19">海洋</text></g>
+          </svg>
+          <div class="overtop-ribbon" id="overtopRibbon">水位超过海堤，海水进入低洼区</div>
+        </div>
+        <div class="scene-foot">
+          <div class="metric"><span>风暴增水</span><strong id="surgeValue">尚未形成</strong></div>
+          <div class="metric"><span>正常潮位</span><strong id="tideValue">平潮</strong></div>
+          <div class="metric"><span>总水位</span><strong id="totalValue">低于海堤</strong></div>
+          <div class="metric" id="overtopMetric"><span>越堤判断</span><strong id="overtopValue">尚未越堤</strong></div>
+        </div>
+        <p class="scene-caption" id="sceneCaption">现在是台风接近前。沿岸风尚未持续推水，水位线代表正常潮位。</p>
+        <div class="timeline">
+          <div class="timeline-top"><span class="timeline-title">时间轴推演</span><span class="time-readout" id="timeReadout">台风接近前</span></div>
+          <input id="timelineInput" type="range" min="0" max="6" step="1" value="0" aria-label="时间轴" />
+          <div class="ticks"><span>接近</span><span>增强</span><span>推水</span><span>高潮</span><span>叠加</span><span>越堤</span><span>淹没</span></div>
+          <div class="timeline-actions">
+            <button class="btn secondary" id="prevBtn" type="button">上一步</button>
+            <button class="btn" id="playBtn" type="button">播放推演</button>
+            <button class="btn secondary" id="nextBtn" type="button">下一步</button>
+          </div>
+        </div>
+      </section>
+
+    </section>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const data = {
+      intensity: {
+        weak: { label: "较弱", surge: 0.42, wind: "较小" },
+        strong: { label: "较强", surge: 0.78, wind: "较强" },
+        veryStrong: { label: "很强", surge: 1.08, wind: "很强" }
+      },
+      tide: {
+        low: { label: "低潮", level: 0.18 },
+        flat: { label: "平潮", level: 0.55 },
+        high: { label: "高潮", level: 0.92 }
+      },
+      coast: {
+        open: { label: "开阔海岸", multiplier: 0.82, terrain: "分散" },
+        bay: { label: "海湾", multiplier: 1.06, terrain: "汇聚" },
+        estuary: { label: "河口低地", multiplier: 1.22, terrain: "放大" }
+      }
+    };
+    const stages = [
+      { label: "台风接近前", factor: 0, caption: "台风接近前，水位线代表正常潮位。" },
+      { label: "台风开始增强", factor: .18, caption: "台风开始增强，向岸风逐渐把海水推向岸边。" },
+      { label: "风暴增水形成", factor: .42, caption: "风暴增水形成。注意：它不是一堵突然出现的巨浪，而是海面整体抬升。" },
+      { label: "接近高潮位", factor: .66, caption: "异常增水正在接近高潮位，观察两条水位线的叠加。" },
+      { label: "水位持续叠加", factor: .84, caption: "风暴增水与正常潮位共同抬高总水位。" },
+      { label: "可能越过海堤", factor: 1, caption: "关键时刻：总水位是否已经超过海堤？请说出你的理由。" },
+      { label: "低洼区受淹", factor: 1, caption: "如果总水位超过海堤，海水会先进入海堤背后的低洼居民区。" }
+    ];
+    const state = { intensity: "strong", tide: "flat", coast: "estuary", time: 0, playing: false, timer: null };
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => [...document.querySelectorAll(s)];
+    const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+    function toast(message) { const el = $("#toast"); el.textContent = message; el.classList.add("show"); clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove("show"), 2600); }
+    function sceneValues() {
+      const stage = stages[state.time];
+      const i = data.intensity[state.intensity], t = data.tide[state.tide], c = data.coast[state.coast];
+      const surge = i.surge * stage.factor * c.multiplier;
+      const total = t.level + surge;
+      const wall = 1.2;
+      return { stage, i, t, c, surge, total, wall, overtop: total >= wall, flood: clamp((total - wall) / .55, 0, 1) };
+    }
+    function setOptionClasses() { $$(".option").forEach(label => { const input = label.querySelector("input"); label.classList.toggle("active", input.checked); }); }
+    function updateModel() {
+      const v = sceneValues();
+      const waterY = (level) => 400 - clamp(level / 2.25, 0, 1) * 145;
+      const normalY = waterY(v.t.level);
+      const totalY = waterY(v.total);
+      $("#normalLine").setAttribute("y1", normalY.toFixed(1));
+      $("#normalLine").setAttribute("y2", normalY.toFixed(1));
+      $("#totalLine").setAttribute("y1", totalY.toFixed(1));
+      $("#totalLine").setAttribute("y2", totalY.toFixed(1));
+      $("#totalLine").setAttribute("x2", v.overtop ? "1000" : "520");
+      $("#seaFill").setAttribute("d", `M0 ${totalY.toFixed(1)} L505 ${totalY.toFixed(1)} L505 520 L0 520 Z`);
+      $("#floodFill").setAttribute("d", `M505 ${totalY.toFixed(1)} L1000 ${totalY.toFixed(1)} L1000 520 L505 520 Z`);
+      $("#normalLabel").setAttribute("transform", `translate(28 ${Math.max(22, normalY - 31).toFixed(1)})`);
+      $("#totalLabel").setAttribute("transform", `translate(${v.overtop ? "790" : "386"} ${Math.max(22, totalY - 31).toFixed(1)})`);
+      $("#totalLine").classList.toggle("danger", v.overtop);
+      $("#totalLabel").classList.toggle("danger", v.overtop);
+      $("#floodFill").classList.toggle("show", v.overtop && state.time >= 5);
+      $("#floodFill").style.opacity = v.overtop && state.time >= 5 ? (.18 + v.flood * .28).toFixed(2) : "0";
+      $("#overtopRibbon").classList.toggle("show", v.overtop && state.time >= 5);
+      $("#scene").classList.toggle("wind-on", state.time >= 1);
+      $("#scene").classList.toggle("estuary", state.coast === "estuary");
+      const surgeLabel = state.time === 0 ? "尚未形成" : v.surge < .35 ? "较小" : v.surge < .75 ? "明显" : "较大";
+      const tideDescriptor = state.tide === "low" ? "较低" : state.tide === "high" ? "较高" : "居中";
+      const tideLabel = v.t.label;
+      const totalLabel = v.overtop ? "超过海堤" : v.total > .95 ? "接近海堤" : "低于海堤";
+      $("#surgeValue").textContent = surgeLabel;
+      $("#tideValue").textContent = tideLabel;
+      $("#totalValue").textContent = totalLabel;
+      $("#overtopValue").textContent = v.overtop ? "已经越堤" : "尚未越堤";
+      $("#overtopMetric").classList.toggle("danger", v.overtop);
+      $("#timeReadout").textContent = v.stage.label;
+      $("#sceneCaption").textContent = v.stage.caption;
+      $("#timelineInput").value = state.time;
+    }
+    function setTime(index) { state.time = clamp(Number(index), 0, stages.length - 1); updateModel(); if (state.time === 2 || state.time === 5) { stopPlayback(); toast(stages[state.time].label + "，请先提问再继续。"); } }
+    function stopPlayback() { state.playing = false; clearInterval(state.timer); state.timer = null; $("#playBtn").textContent = "播放推演"; }
+    function play() { if (state.playing) { stopPlayback(); return; } if (state.time >= stages.length - 1) state.time = 0; state.playing = true; $("#playBtn").textContent = "暂停推演"; updateModel(); state.timer = setInterval(() => { if (state.time >= stages.length - 1) { stopPlayback(); return; } state.time += 1; updateModel(); if (state.time === 2 || state.time === 5) { stopPlayback(); toast(stages[state.time].label + "，请先提问再继续。"); } }, 950); }
+    $$(".option input").forEach(input => input.addEventListener("change", () => { const group = input.name; state[group] = input.value; state.time = 0; setOptionClasses(); updateModel(); toast("条件已改变。观察水位线会怎样变化。"); }));
+    $("#timelineInput").addEventListener("input", e => { stopPlayback(); setTime(e.target.value); });
+    $("#prevBtn").addEventListener("click", () => setTime(state.time - 1));
+    $("#nextBtn").addEventListener("click", () => setTime(state.time + 1));
+    $("#playBtn").addEventListener("click", play);
+    $("#resetBtn").addEventListener("click", () => { stopPlayback(); Object.assign(state, { intensity: "strong", tide: "flat", coast: "estuary", time: 0 }); $$("input[name=intensity]").forEach(i => i.checked = i.value === state.intensity); $$("input[name=tide]").forEach(i => i.checked = i.value === state.tide); $$("input[name=coast]").forEach(i => i.checked = i.value === state.coast); setOptionClasses(); updateModel(); toast("场景已重置。"); });
+    setOptionClasses(); updateModel();
+  </script>
+</body>
+</html>
